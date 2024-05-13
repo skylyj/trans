@@ -18,17 +18,9 @@ tokenizer = M2M100Tokenizer.from_pretrained("facebook/m2m100_418M", src_lang="ko
 
 
 def preprocess_function(examples):
-    # Example of specifying source and target languages directly
     inputs = ["translate Korean to Chinese: " + ex for ex in examples["korean"]]
     targets = [ex for ex in examples["chinese"]]
-
-    # Tokenize inputs and targets together using text_target for the targets
     model_inputs = tokenizer(inputs, text_target=targets, max_length=128, truncation=True, padding="max_length")
-
-    # Set the labels for training
-    # import ipdb
-    # ipdb.set_trace()
-
     model_inputs["labels"] = model_inputs["input_ids"]
     return model_inputs
 
@@ -37,6 +29,8 @@ tokenized_datasets = datasets.map(preprocess_function, batched=True)
 
 # Initialize the Model
 model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M")
+device = 'mps'
+model.to(device)
 model.config.decoder_start_token_id = tokenizer.get_lang_id("zh")
 
 
@@ -52,8 +46,6 @@ training_args = Seq2SeqTrainingArguments(
     num_train_epochs=3,
     predict_with_generate=True
 )
-
-# Set Up Trainer
 
 
 def compute_metrics(eval_pred):
